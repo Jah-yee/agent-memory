@@ -198,6 +198,41 @@ def test_import_of_a_malformed_file_exits_two(home, tmp_path):
     assert result.returncode == 2
 
 
+def test_import_treats_a_null_importance_as_absent(tmp_path, home):
+    """A JSON ``null`` importance must fall back to the default, not crash.
+
+    ``int(None)`` raised TypeError, which the ``except ValueError`` below does
+    not catch, so the whole import aborted on an otherwise valid record.
+    """
+    source = tmp_path / "null.json"
+    source.write_text(
+        json.dumps([{"content": "null importance", "importance": None, "tags": []}]),
+        encoding="utf-8",
+    )
+    result = run("import", str(source), "--format", "json", db=home, expect=0)
+    assert json.loads(result.stdout)["imported"] == 1
+
+    listed = json.loads(run("list", "--format", "json", db=home, expect=0).stdout)
+    assert [m["importance"] for m in listed] == [3]
+
+
+def test_import_preserves_an_explicit_zero_importance(tmp_path, home):
+    """``0`` is a valid importance (0..MAX_IMPORTANCE) and must survive import.
+
+    Coercing with ``record.get("importance") or DEFAULT_IMPORTANCE`` looks like
+    it only handles None, but ``0`` is falsy too, so it silently stored 3.
+    """
+    source = tmp_path / "zero.json"
+    source.write_text(
+        json.dumps([{"content": "trivial", "importance": 0, "tags": []}]),
+        encoding="utf-8",
+    )
+    run("import", str(source), db=home, expect=0)
+
+    listed = json.loads(run("list", "--format", "json", db=home, expect=0).stdout)
+    assert [m["importance"] for m in listed] == [0]
+
+
 def test_invalid_importance_exits_two(home):
     run("remember", "x", "--importance", "9", db=home, expect=2)
 

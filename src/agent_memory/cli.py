@@ -27,7 +27,7 @@ from pathlib import Path
 from . import __version__
 from .consolidate import Consolidator
 from .recall import Recaller
-from .store import KINDS, MemoryStore
+from .store import DEFAULT_IMPORTANCE, KINDS, MemoryStore
 
 EXIT_OK = 0
 EXIT_ERROR = 2
@@ -263,7 +263,11 @@ def _cmd_import(args: argparse.Namespace, store: MemoryStore) -> int:
                 str(record["content"]),
                 tags=list(record.get("tags", [])),
                 kind=str(record.get("kind", "episodic")),
-                importance=int(record.get("importance", 3)),
+                importance=(
+                    DEFAULT_IMPORTANCE
+                    if record.get("importance") is None
+                    else int(record["importance"])
+                ),
             )
         except ValueError as exc:
             if not args.skip_existing:
