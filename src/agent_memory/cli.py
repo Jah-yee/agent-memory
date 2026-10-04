@@ -81,7 +81,22 @@ def build_parser() -> argparse.ArgumentParser:
         "recall", parents=[common], help="retrieve the most relevant memories"
     )
     recall.add_argument("query")
-    recall.add_argument("--limit", type=int, default=5)
+    def _positive_int(value: str) -> int:
+        try:
+            n = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"invalid int value: {value!r}")
+        if n < 1:
+            raise argparse.ArgumentTypeError(f"limit must be ≥ 1, got {n}")
+        return n
+
+    recall.add_argument(
+        "--limit",
+        type=_positive_int,
+        default=5,
+        metavar="N",
+        help="maximum number of memories to return (must be ≥ 1)",
+    )
     recall.add_argument("--kind", choices=KINDS, default=None)
     recall.add_argument("--tag", default=None)
     recall.add_argument(
