@@ -97,3 +97,5 @@ def test_recall_does_not_return_an_unrelated_memory_for_an_accented_query(tmp_pa
         assert Recaller(store, reinforce=False).recall("ação") == []
     finally:
         store.close()
+
+
